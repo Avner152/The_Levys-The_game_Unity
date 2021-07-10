@@ -21,7 +21,7 @@ public class Movement : MonoBehaviour
     {
         Cursor.lockState = CursorLockMode.None;
     }
-
+    
     // Update is called once per frame
     private void Update()
     {
