@@ -33,7 +33,7 @@ namespace UnityStandardAssets.Characters.ThirdPerson
         private void FixedUpdate()
         {
             // read inputs
-            float h = Input.GetAxis("Horizontal");
+            float h = Input.GetAxis("Mouse X");
             float v = Input.GetAxis("Vertical");
 
             // calculate move direction to pass to character

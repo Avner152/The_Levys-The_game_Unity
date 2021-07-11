@@ -29,7 +29,7 @@ public class Player : MonoBehaviour
         float rx = Input.GetAxis("Mouse Y") * angularSpeed;
         transform.Rotate(Vector3.up * ry);
         cameraRotation -= rx;
-        cameraRotation = Mathf.Clamp(cameraRotation, -75, 90);
+        //cameraRotation = Mathf.Clamp(cameraRotation, -75, 90);
         gameCamera.transform.localEulerAngles = new Vector3(cameraRotation, 0, 0);
 
         // Handle Movement
