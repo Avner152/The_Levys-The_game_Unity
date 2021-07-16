@@ -1,55 +1,77 @@
+using TMPro;
 using UnityEngine;
 
 namespace UnityStandardAssets.Characters.ThirdPerson
 {
-    [RequireComponent(typeof (ThirdPersonCharacter))]
+    [RequireComponent(typeof(ThirdPersonCharacter))]
     public class ThirdPersonUserControl : MonoBehaviour
     {
-        private ThirdPersonCharacter m_Character; // A reference to the ThirdPersonCharacter on the object
-        private Transform m_Cam;                  // A reference to the main camera in the scenes transform
-        private Vector3 m_CamForward;             // The current forward direction of the camera
-        private Vector3 m_Move;
+        public ThirdPersonCharacter character; // A reference to the ThirdPersonCharacter on the object
+        public Transform gunHolder;
+        public GameObject pickGunText;
+        private Camera cam;                  // A reference to the main camera in the scene
+        private Vector3 move;
+        private float ry = 0;
+        private bool hasGun = false;
 
-        
+
         private void Start()
         {
-            // get the transform of the main camera
-            if (Camera.main != null)
+            cam = Camera.main;
+            Cursor.lockState = CursorLockMode.Locked;
+        }
+
+        private void Update()
+        {
+            // read inputs
+            float y = Input.GetAxis("Mouse Y");
+            float h = Input.GetAxis("Mouse X");
+            if (Mathf.Abs(y) >= 0.25)
             {
-                m_Cam = Camera.main.transform;
+                h = 0;
+            }
+            float v = Input.GetAxis("Vertical");
+            ry -= y;
+            cam.transform.localEulerAngles = new Vector3(ry, 0, 0);
+            move = new Vector3(h, 0, v);
+            move = transform.TransformDirection(move);
+
+            // Check if gun is in field of view
+            Ray ray = cam.ScreenPointToRay(Input.mousePosition);
+            if (Physics.Raycast(ray, out RaycastHit hit) && hit.collider.gameObject.CompareTag("Gun"))
+            {
+                pickGunText.SetActive(true);
+                pickGunText.GetComponent<TextMeshProUGUI>().SetText("Click the mouse to pick " + hit.collider.transform.parent.name);
+                // If the left mouse buttons is clicked, pick the weapon
+                if (Input.GetMouseButtonDown(0))
+                {
+                    hit.collider.gameObject.SetActive(false);
+                    // Take only the gun model
+                    hit.collider.transform.parent.SetParent(gunHolder, false);
+                    hit.collider.transform.parent.GetChild(0).localPosition = Vector3.zero;
+                    hit.collider.GetComponentInParent<Rotation>().enabled = false;
+                    hasGun = true;
+                }
             }
             else
             {
-                Debug.LogWarning(
-                    "Warning: no main camera found. Third person character needs a Camera tagged \"MainCamera\", for camera-relative controls.", gameObject);
-                // we use self-relative controls in this case, which probably isn't what the user wants, but hey, we warned them!
+                pickGunText.SetActive(false);
             }
 
-            // get the third person character ( this should never be null due to require component )
-            m_Character = GetComponent<ThirdPersonCharacter>();
+            if (hasGun && Input.GetKeyDown(KeyCode.Space))
+            {
+                if (Physics.Raycast(ray, out hit) && hit.collider.gameObject.CompareTag("Character"))
+                {
+                    hit.collider.gameObject.SetActive(false);
+                }
+            }
         }
 
         // Fixed update is called in sync with physics
         private void FixedUpdate()
         {
-            // read inputs
-            float h = Input.GetAxis("Mouse X");
-            float v = Input.GetAxis("Vertical");
-
-            // calculate move direction to pass to character
-            if (m_Cam != null)
-            {
-                // calculate camera relative direction to move:
-                m_CamForward = Vector3.Scale(m_Cam.forward, new Vector3(1, 0, 1)).normalized;
-                m_Move = v*m_CamForward + h*m_Cam.right;
-            }
-            else
-            {
-                // we use world-relative directions in the case of no main camera
-                m_Move = v * Vector3.forward + h * Vector3.right;
-            }
             // pass all parameters to the character control script
-            m_Character.Move(m_Move);
+            character.Move(move);
         }
     }
 }

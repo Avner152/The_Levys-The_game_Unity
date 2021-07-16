@@ -8,4 +8,8 @@ public class Rotation : MonoBehaviour
     {
         transform.Rotate(Vector3.up * angularSpeed * Time.deltaTime);
     }
+    void OnDisable()
+    {
+        transform.localEulerAngles = Vector3.zero;
+    }
 }

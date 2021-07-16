@@ -3,8 +3,14 @@ using UnityEngine;
 
 public class GunPlacer : MonoBehaviour
 {
-    [SerializeField] private List<Transform> hidingSpots;
-    [SerializeField] private List<GameObject> gunModels;
+    public List<Transform> hidingSpots;
+    public List<GameObject> gunModels;
+    private List<Transform> gunPositions = new List<Transform>();
+
+    public List<Transform> GetGunPositions()
+    {
+        return gunPositions;
+    }
 
     private void Start()
     {
@@ -23,6 +29,7 @@ public class GunPlacer : MonoBehaviour
             Instantiate(gun, hidingSpot.position, Quaternion.identity, hidingSpot);
             // Remove the hiding spot from the list so no other gun be in it
             hidingSpots.Remove(hidingSpot);
+            gunPositions.Add(hidingSpot);
         }
     }
 }
