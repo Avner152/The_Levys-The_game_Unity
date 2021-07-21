@@ -3,51 +3,53 @@ using UnityEngine;
 using UnityEngine.AI;
 using UnityStandardAssets.Characters.ThirdPerson;
 
-public class PlayerNPC : MonoBehaviour
+public class PlayerNPC : NPC
 {
-    public NavMeshAgent agent;
     public Transform player;
-    public ThirdPersonCharacter character;
-    public GunPlacer gunPlacer;
-    public Transform gunHolder;
-    private bool hasGun = false;
 
-    void Update()
+    protected override void AcquireTarget()
     {
         Transform target = player;
+        agent.stoppingDistance = 1f;
         if (!hasGun)
         {
             // If the character doesn't have a gun, search for the closest gun first
             List<Transform> gunPositions = gunPlacer.GetGunPositions();
+            float shortestDistance = 9999;
+            Transform closestGun = null;
             for (int i = 0; i < gunPositions.Count; i++)
             {
-                if (Vector3.Distance(gunPositions[i].position, transform.position) <= Vector3.Distance(player.position, transform.position))
+                if (Vector3.Distance(gunPositions[i].position, transform.position) < shortestDistance)
                 {
-                    // Fist check if th NPC can get to that gun.
+                    // Fist check if th NPC can get to that gun
                     NavMeshPath path = new NavMeshPath();
                     agent.CalculatePath(gunPositions[i].position, path);
+                    // If the path is completed, it means the character can reach that gun
                     if (path.status == NavMeshPathStatus.PathComplete)
                     {
-                        target = gunPositions[i];
-                        break;
+                        closestGun = gunPositions[i];
+                        shortestDistance = Vector3.Distance(gunPositions[i].position, transform.position);
                     }
                 }
             }
+            if (closestGun != null)
+            {
+                target = closestGun;
+            }
         }
-        if (Vector3.Distance(target.position, transform.position) > agent.stoppingDistance)
+        if (target != null)
         {
-            agent.SetDestination(target.position);
-        }
-        if (agent.remainingDistance > agent.stoppingDistance)
-        {
-            // Tell the character to move
-            character.Move(agent.desiredVelocity);
-        }
-        else
-        {
-            character.Move(Vector3.zero);
+            // Fist check if th NPC can get to that gun
+            NavMeshPath path = new NavMeshPath();
+            agent.CalculatePath(target.position, path);
+            // If the path is completed, it means the character can reach that gun
+            if (path.status == NavMeshPathStatus.PathComplete)
+            {
+                agent.SetDestination(target.position);
+            }
         }
     }
+
     void OnTriggerEnter(Collider other)
     {
         if (other.gameObject.CompareTag("Gun") && !hasGun)
@@ -57,6 +59,7 @@ public class PlayerNPC : MonoBehaviour
             other.transform.parent.SetParent(gunHolder, false);
             other.transform.parent.GetChild(0).localPosition = Vector3.zero;
             other.GetComponentInParent<Rotation>().enabled = false;
+            agent.stoppingDistance = 1.75f;
         }
     }
 }
