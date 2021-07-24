@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.AI;
 using UnityStandardAssets.Characters.ThirdPerson;
 
@@ -11,8 +10,10 @@ public abstract class NPC : MonoBehaviour
     public Transform gunHolder;
     public Health health;
     public float attackRange = 3;
+    public float attackDelay = 1f;
     protected bool hasGun;
     private Transform enemy;
+    private float lastAttack;
 
     // Start is called before the first frame update
     void Start()
@@ -20,12 +21,13 @@ public abstract class NPC : MonoBehaviour
         enemy = null;
         hasGun = false;
         AcquireTarget();
+        lastAttack = Time.time;
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (health.health > 0)
+        if (health.GetCurrentHealth() > 0)
         {
             if (agent.remainingDistance > agent.stoppingDistance)
             {
@@ -42,17 +44,28 @@ public abstract class NPC : MonoBehaviour
                 }
                 else
                 {
-                    transform.rotation = Quaternion.LookRotation((enemy.position - transform.position).normalized, Vector3.up);
-                    if (Physics.Raycast(transform.position, (enemy.position - transform.position).normalized, out RaycastHit hit, attackRange))
+                    transform.LookAt(enemy);
+                    if (Time.time > lastAttack + attackDelay)
                     {
-                        if (hit.transform == enemy)
+                        lastAttack = Time.time;
+                        gunHolder.GetComponentInChildren<ParticleSystem>().Play();
+                        //if (Physics.BoxCast(transform.position + transform.forward * attackRange / 2, new Vector3(0.5f, 0.5f, 0.5f) * attackRange, transform.forward, out RaycastHit hit))
+                        if (Physics.Raycast(transform.position + Vector3.up * 1.5f, transform.forward, out RaycastHit hit, attackRange))
                         {
-                            enemy.GetComponent<Health>().Hit(Random.Range(10, 25));
-                            if (enemy.GetComponent<Health>().health <= 0)
+                            if (hit.transform == enemy)
                             {
-                                enemy = null;
-                                AcquireTarget(); // If the enemy died, get a new target
+                                enemy.GetComponent<Health>().Hit(Random.Range(5, 30));
+                                if (enemy.GetComponent<Health>().GetCurrentHealth() <= 0)
+                                {
+                                    enemy = null;
+                                    AcquireTarget(); // If the enemy died, get a new target
+                                }
                             }
+                        }
+                        else // If we can't hit the enemy, find a new target
+                        {
+                            enemy = null;
+                            AcquireTarget(); // If the enemy died, get a new target
                         }
                     }
                 }
@@ -61,19 +74,25 @@ public abstract class NPC : MonoBehaviour
         else
         {
             // If the NPC is dead, disable the NavMeshAgent and this script
+            this.enabled = false;
+            GetComponentInChildren<NPCAttack>().enabled = false;
+            GetComponent<Rigidbody>().collisionDetectionMode = CollisionDetectionMode.Discrete;
             GetComponent<Rigidbody>().isKinematic = true;
             GetComponent<Rigidbody>().useGravity = false;
             GetComponent<Collider>().enabled = false;
-            this.enabled = false;
+            gunHolder.gameObject.SetActive(false);
             agent.enabled = false;
         }
     }
 
     public void Attack(GameObject enemy)
     {
-        this.enemy = enemy.transform;
-        agent.SetDestination(this.enemy.position);
-        agent.stoppingDistance = attackRange;
+        if (hasGun)
+        {
+            this.enemy = enemy.transform;
+            agent.SetDestination(this.enemy.position);
+            agent.stoppingDistance = attackRange;
+        }
     }
     public void StopAttack()
     {

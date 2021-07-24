@@ -8,6 +8,7 @@ TagManager:
   - Character
   - door
   - Grenade
+  - Health
   layers:
   - Default
   - TransparentFX

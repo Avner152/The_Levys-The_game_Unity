@@ -10,7 +10,7 @@ public class PlayerNPC : NPC
     protected override void AcquireTarget()
     {
         Transform target = player;
-        agent.stoppingDistance = 1f;
+        agent.stoppingDistance = 2.5f;
         if (!hasGun)
         {
             // If the character doesn't have a gun, search for the closest gun first
