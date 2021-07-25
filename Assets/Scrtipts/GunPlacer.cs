@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
+// A class that places models instances in random position
 public class GunPlacer : MonoBehaviour
 {
     public List<Transform> hidingSpots;
@@ -29,10 +30,12 @@ public class GunPlacer : MonoBehaviour
             GameObject gunInstance = Instantiate(gun, hidingSpot.position, Quaternion.identity, hidingSpot);
             // Remove the hiding spot from the list so no other gun be in it
             hidingSpots.Remove(hidingSpot);
+            // If the model is indeed a gun add it to the gun positions list
+            // This list is used by the NPC to select which gun to pick, and because
+            // NPC can't use a grenade we only add guns to it
             if (gunInstance.CompareTag("Gun"))
             {
                 gunPositions.Add(gunInstance.transform);
-
             }
         }
     }
